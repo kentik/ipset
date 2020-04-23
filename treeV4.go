@@ -108,12 +108,8 @@ func (t *treeV4) Add(cidr *net.IPNet) {
 			panic("think about this case")
 		}
 
-		if matching >= curr.prefix && matching < cdr.prefix {
-			// go deeper
-			offset += curr.prefix
+		if matching >= offset+curr.prefix && matching < cdr.prefix {
 			// decide whether to branch left or right
-			// if curr.addr
-
 			// left and right are always set together, might as well check just one
 			if curr.left == 0 {
 				// currently stored prefix is shorter than new one
@@ -187,8 +183,8 @@ func (t *treeV4) Contains(ip net.IP) bool {
 	offset := uint32(0)
 	for {
 		matching := matchingPrefix(addr, curr.addr)
-		currMask := curr.prefix + offset
-		if matching < currMask {
+		offset += curr.prefix
+		if matching < offset {
 			return false
 		}
 
@@ -196,8 +192,7 @@ func (t *treeV4) Contains(ip net.IP) bool {
 			return true
 		}
 
-		offset += curr.prefix
-		if (addr>>(32-(currMask+1)))&0x1 == 0 {
+		if (addr>>(32-(offset+1)))&0x1 == 0 {
 			curr = &t.nodes[curr.left]
 		} else {
 			curr = &t.nodes[curr.right]
