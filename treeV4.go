@@ -120,7 +120,7 @@ func (t *treeV4) Add(cidr *net.IPNet) {
 			// current pattern is exhausted decide whether to go left or right based on msb after offset+curr.prefix
 			// memorize offset
 			offset += curr.prefix
-			if (cdr.addr>>(32-(matching+1)))&0x1 == 0 {
+			if (cdr.addr>>(32-(offset+1)))&0x1 == 0 {
 				curr = &t.nodes[curr.left]
 			} else {
 				curr = &t.nodes[curr.right]

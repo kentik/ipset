@@ -1,99 +1,75 @@
 package ipset
 
 import (
+	"encoding/binary"
 	"net"
+	"strings"
 	"testing"
+
+	"github.com/kentik/chf-alert/pkg/alert/util"
 )
 
 func parseCidrs(s ...string) (res []*net.IPNet) {
-	for _, ss := range s {
+	res = make([]*net.IPNet, len(s))
+	for i, ss := range s {
 		_, cidr, err := net.ParseCIDR(ss)
 		if err != nil {
 			panic(err)
 		}
-		res = append(res, cidr)
+		res[i] = cidr
 	}
 
 	return
 }
 
-type test struct {
-	arg  net.IP
-	want bool
-}
-
+// TODO(tjonak): those tests add 1.5s to chf-alert test suite, move this to separate package
 var groups = []struct {
-	name  string
-	cidrs []*net.IPNet
-	tests []test
+	name        string
+	cidrs       []*net.IPNet
+	negativeIPs []net.IP
 }{
 	{
-		name:  "one block enclosing another",
-		cidrs: parseCidrs("192.168.0.0/25", "192.168.0.0/24"),
-		tests: []test{
-			{net.ParseIP("192.168.0.1"), true},
-			{net.ParseIP("184.0.0.1"), false},
-		},
+		name:        "one block enclosing another",
+		cidrs:       parseCidrs("192.168.0.0/25", "192.168.0.0/24"),
+		negativeIPs: []net.IP{net.ParseIP("184.0.0.1")},
 	},
 	{
-		name:  "two overlapping blocks",
-		cidrs: parseCidrs("255.0.0.0/8", "254.0.0.0/8"),
-		tests: []test{
-			{net.ParseIP("255.0.0.1"), true},
-			{net.ParseIP("254.0.0.1"), true},
-			{net.ParseIP("253.0.0.1"), false},
-		},
+		name:        "two overlapping blocks",
+		cidrs:       parseCidrs("255.0.0.0/20", "254.0.0.0/20"),
+		negativeIPs: []net.IP{net.ParseIP("253.0.0.1")},
 	},
 	{
-		name:  "three overlaping blocks",
-		cidrs: parseCidrs("255.0.0.0/8", "254.0.0.0/8", "128.0.0.0/8"),
-		tests: []test{
-			{net.ParseIP("255.0.0.1"), true},
-			{net.ParseIP("254.0.0.1"), true},
-			{net.ParseIP("253.0.0.1"), false},
-			{net.ParseIP("128.0.0.1"), true},
-			{net.ParseIP("84.0.0.1"), false},
-		},
+		name:        "three overlaping blocks",
+		cidrs:       parseCidrs("255.0.0.0/20", "254.0.0.0/20", "128.0.0.0/20"),
+		negativeIPs: []net.IP{net.ParseIP("253.0.0.1"), net.ParseIP("84.0.0.1")},
 	},
 	{
-		name:  "2 unrelated /32 blocks",
-		cidrs: parseCidrs("127.0.0.1/32", "127.0.0.2/32"),
-		tests: []test{
-			{net.ParseIP("127.0.0.1"), true},
-			{net.ParseIP("127.0.0.2"), true},
-			{net.ParseIP("127.0.0.3"), false},
-			{net.ParseIP("32.0.0.1"), false},
-		},
+		name:        "2 unrelated /32 blocks",
+		cidrs:       parseCidrs("127.0.0.1/32", "127.0.0.2/32"),
+		negativeIPs: []net.IP{net.ParseIP("127.0.0.3"), net.ParseIP("32.0.0.1")},
 	},
 	{
-		name:  "all previous mixed",
-		cidrs: parseCidrs("192.168.0.0/25", "192.168.0.0/24", "255.0.0.0/8", "254.0.0.0/8", "128.0.0.0/8", "127.0.0.1/32", "127.0.0.2/32"),
-		tests: []test{
-			{net.ParseIP("192.168.0.1"), true},
-			{net.ParseIP("184.0.0.1"), false},
-			{net.ParseIP("255.0.0.1"), true},
-			{net.ParseIP("254.0.0.1"), true},
-			{net.ParseIP("253.0.0.1"), false},
-			{net.ParseIP("128.0.0.1"), true},
-			{net.ParseIP("84.0.0.1"), false},
-			{net.ParseIP("127.0.0.1"), true},
-			{net.ParseIP("127.0.0.2"), true},
-			{net.ParseIP("127.0.0.3"), false},
-			{net.ParseIP("32.0.0.1"), false},
-		},
+		name:        "all previous mixed",
+		cidrs:       parseCidrs("192.168.0.0/25", "192.168.0.0/24", "255.0.0.0/20", "254.0.0.0/20", "128.0.0.0/20", "127.0.0.1/32", "127.0.0.2/32"),
+		negativeIPs: []net.IP{net.ParseIP("184.0.0.1"), net.ParseIP("253.0.0.1"), net.ParseIP("84.0.0.1"), net.ParseIP("127.0.0.3"), net.ParseIP("32.0.0.1")},
 	},
 	{
-		name:  "0 vs 1 prefix",
-		cidrs: parseCidrs("255.0.0.0/8", "128.0.0.0/8"),
-		tests: []test{
-			{net.ParseIP("255.0.0.1"), true},
-			{net.ParseIP("255.0.0.129"), true},
-			{net.ParseIP("254.0.0.2"), false},
-			{net.ParseIP("254.0.0.129"), false},
-			{net.ParseIP("128.0.0.1"), true},
-			{net.ParseIP("128.0.0.129"), true},
-			{net.ParseIP("129.0.0.2"), false},
-			{net.ParseIP("129.0.0.129"), false},
+		name:        "0 vs 1 prefix",
+		cidrs:       parseCidrs("255.0.0.0/20", "128.0.0.0/20"),
+		negativeIPs: []net.IP{net.ParseIP("254.0.0.2"), net.ParseIP("254.0.0.129"), net.ParseIP("129.0.0.2"), net.ParseIP("129.0.0.129")},
+	},
+	{
+		name: "***REMOVED***",
+		cidrs: func() []*net.IPNet {
+			cidrsCSV := `***REMOVED***`
+			cidrsRaw := strings.Split(cidrsCSV, ",")
+			return parseCidrs(cidrsRaw...)
+		}(),
+		negativeIPs: []net.IP{
+			net.ParseIP("0.0.0.0"),
+			net.ParseIP("1.2.3.4"),
+			net.ParseIP("***REMOVED***"), // last ip before min int value from ***REMOVED***"***REMOVED***"),  // last ip after max+255+1 int value from ***REMOVED***"***REMOVED***"),
+			net.ParseIP("255.255.255.255"),
 		},
 	},
 }
@@ -102,12 +78,30 @@ func Test_set_Contains(t *testing.T) {
 	for _, group := range groups {
 		t.Run(group.name, func(t *testing.T) {
 			s := NewSet(group.cidrs...)
-			for _, tt := range group.tests {
-				t.Run("", func(t *testing.T) {
-					if got := s.Contains(tt.arg); got != tt.want {
-						t.Errorf("set.Contains() = %v, want %v", got, tt.want)
+
+			for _, ip := range group.negativeIPs {
+				t.Run(ip.String(), func(t *testing.T) {
+					if got := s.Contains(ip); got != false {
+						t.Errorf("negative case returned true: %s", ip.String())
 					}
 				})
+			}
+
+			for _, cidr := range group.cidrs {
+				low, high, err := util.GetHostsRangeFromCIDR(cidr.String())
+				if err != nil {
+					t.Fatalf("Getting cidr range failed: %v", err)
+				}
+
+				for i := low; i <= high; i++ {
+					ip := make(net.IP, 4)
+					binary.BigEndian.PutUint32(ip, i)
+					t.Run(ip.String(), func(t *testing.T) {
+						if got := s.Contains(ip); got != true {
+							t.Errorf("positive case returned false: %s", ip.String())
+						}
+					})
+				}
 			}
 		})
 	}
