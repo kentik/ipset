@@ -12,3 +12,7 @@ type treeV6 struct {
 func (t *treeV6) Add(cidr *net.IPNet) {
 	return
 }
+
+func (t *treeV6) Contains(ip net.IP) bool {
+	return false
+}

@@ -25,8 +25,11 @@ func NewSet(cidrs ...*net.IPNet) CIDRSet {
 	return s
 }
 
-func (s *set) Contains(net.IP) bool {
-	return false
+func (s *set) Contains(ip net.IP) bool {
+	if strings.IndexByte(ip.String(), ':') < 0 {
+		return s.v4.Contains(ip)
+	}
+	return s.v6.Contains(ip)
 }
 
 func (s *set) Add(cidr *net.IPNet) {
