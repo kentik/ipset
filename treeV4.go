@@ -108,7 +108,8 @@ func (t *treeV4) Add(cidr *net.IPNet) {
 			panic("think about this case")
 		}
 
-		if matching >= offset+curr.prefix && matching < cdr.prefix {
+		if matching >= offset+curr.prefix && cdr.prefix >= offset+curr.prefix {
+			// if matching >= offset+curr.prefix && matching < cdr.prefix {
 			// decide whether to branch left or right
 			// left and right are always set together, might as well check just one
 			if curr.left == 0 {
@@ -132,7 +133,7 @@ func (t *treeV4) Add(cidr *net.IPNet) {
 		}
 
 		// incoming cidr has shorter prefix, discard remaining parts of the tree
-		if matching >= curr.prefix && cdr.prefix < offset+curr.prefix {
+		if matching >= offset+curr.prefix && cdr.prefix < offset+curr.prefix {
 			curr.prefix = cdr.prefix - offset
 			t.freeUpNodes(curr.left, curr.right)
 			curr.left, curr.right = 0, 0
@@ -167,7 +168,7 @@ func (t *treeV4) Add(cidr *net.IPNet) {
 			return
 		}
 
-		panic(fmt.Sprintf("%d, %x %d, %x %d", offset, curr.addr, curr.prefix, cdr.addr, cdr.prefix))
+		panic(fmt.Errorf("%d, %x %d, %x %d", offset, curr.addr, curr.prefix, cdr.addr, cdr.prefix))
 	}
 }
 

@@ -72,6 +72,10 @@ var groups = []struct {
 			net.ParseIP("255.255.255.255"),
 		},
 	},
+	{
+		name:  "panic from tests1",
+		cidrs: parseCidrs("172.17.0.0/24", "172.17.0.1/24"),
+	},
 }
 
 func Test_set_Contains(t *testing.T) {
