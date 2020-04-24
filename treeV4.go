@@ -178,7 +178,12 @@ func (t *treeV4) Contains(ip net.IP) bool {
 		return false
 	}
 
-	addr := binary.BigEndian.Uint32(ip.To4())
+	ip4 := ip.To4()
+	if ip4 == nil {
+		return false
+	}
+
+	addr := binary.BigEndian.Uint32(ip4)
 	return t.ContainsRaw(addr)
 }
 
