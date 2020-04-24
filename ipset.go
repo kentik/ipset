@@ -5,6 +5,8 @@ import (
 	"math/bits"
 	"net"
 	"strings"
+
+	"github.com/kentik/chf-alert/pkg/alert/util"
 )
 
 // CIDRSet is a fast lookup structure which tells whether ip is covered by any of cidr blocks contained
@@ -29,15 +31,9 @@ func NewSet(cidrs ...*net.IPNet) CIDRSet {
 
 // NewSetFromCSV constructs set from comma separated list of cidrs
 func NewSetFromCSV(cidrsCSV string) (CIDRSet, error) {
-	cidrsRaw := strings.Split(cidrsCSV, ",")
-	cidrs := make([]*net.IPNet, len(cidrsRaw))
-
-	for i, cidr := range cidrsRaw {
-		_, cidr, err := net.ParseCIDR(cidr)
-		if err != nil {
-			return nil, fmt.Errorf("from NewSetFromCSV: %w", err)
-		}
-		cidrs[i] = cidr
+	cidrs, err := util.IPCidrListFromRaw(cidrsCSV)
+	if err != nil {
+		return nil, fmt.Errorf("from NewSetFromCSV: %w", err)
 	}
 
 	return NewSet(cidrs...), nil
