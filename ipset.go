@@ -40,13 +40,14 @@ func NewSetFromCSV(cidrsCSV string) (CIDRSet, error) {
 }
 
 func (s *set) Contains(ip net.IP) bool {
-	if ip = ip.To4(); ip != nil {
+	if ip := ip.To4(); ip != nil {
 		return s.v4.Contains(ip)
 	}
-	if ip = ip.To16(); ip != nil {
+	if ip := ip.To16(); ip != nil {
 		return s.v6.Contains(ip)
 	}
-	panic(fmt.Errorf("invalid ip passed: %v", []byte(ip)))
+
+	return false
 }
 
 func (s *set) ContainsRawIPv4(ip uint32) bool {

@@ -75,6 +75,9 @@ var groups = []struct {
 	{
 		name:  "panic from tests1",
 		cidrs: parseCidrs("172.17.0.0/24", "172.17.0.1/24"),
+		negativeIPs: []net.IP{
+			net.IP([]byte{32, 1, 5, 160, 13, 0, 0, 0, 0, 0, 0, 0, 66, 110, 0, 24}),
+		},
 	},
 }
 
