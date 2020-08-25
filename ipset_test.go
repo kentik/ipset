@@ -79,12 +79,21 @@ var groups = []struct {
 			net.IP([]byte{32, 1, 5, 160, 13, 0, 0, 0, 0, 0, 0, 0, 66, 110, 0, 24}),
 		},
 	},
+	{
+		name:        "matching => node.prefix && node.prefix < offset",
+		cidrs:       parseCidrs("255.255.255.0/24", "255.255.240.0/20"),
+		negativeIPs: []net.IP{net.ParseIP("254.0.0.2")},
+	},
+	{
+		name:  "two disjoint ipv4 blocks",
+		cidrs: parseCidrs("192.168.0.0/24", "255.0.0.0/20"),
+	},
 }
 
-func Test_set_Contains(t *testing.T) {
+func TestSetContains(t *testing.T) {
 	for _, group := range groups {
 		t.Run(group.name, func(t *testing.T) {
-			s := NewSet(group.cidrs...)
+			s := NewSet2(group.cidrs...)
 
 			for _, ip := range group.negativeIPs {
 				t.Run(ip.String(), func(t *testing.T) {
@@ -100,11 +109,12 @@ func Test_set_Contains(t *testing.T) {
 					t.Fatalf("Getting cidr range failed: %v", err)
 				}
 
-				for i := low; i <= high; i++ {
+				for i := uint64(low); i <= uint64(high); i++ {
 					ip := make(net.IP, 4)
-					binary.BigEndian.PutUint32(ip, i)
+					binary.BigEndian.PutUint32(ip, uint32(i))
 					t.Run(ip.String(), func(t *testing.T) {
-						if got := s.Contains(ip); got != true {
+						got := s.Contains(ip)
+						if got != true {
 							t.Errorf("positive case returned false: %s", ip.String())
 						}
 					})
