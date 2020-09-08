@@ -15,19 +15,19 @@ type CIDRSet interface {
 	ContainsRawIPv4(uint32) bool
 }
 
-type uint128set struct {
+type set struct {
 	root *treeNode
 }
 
-// NewSet constructs set from list of cidrs
+// NewSet constructs CIDRSet from list of cidrs
 func NewSet(cidrs ...*net.IPNet) CIDRSet {
-	set := &uint128set{}
+	s := &set{}
 
 	for _, cidr := range cidrs {
-		set.Add(cidr)
+		s.Add(cidr)
 	}
 
-	return set
+	return s
 }
 
 // NewSetFromCSV constructs set from comma separated list of cidrs
@@ -49,14 +49,14 @@ func uint128FromIP(ip net.IP) (uint128.Uint128, error) {
 	return uint128.New(binary.BigEndian.Uint64(ipv6[8:]), binary.BigEndian.Uint64(ipv6[:8])), nil
 }
 
-func (s *uint128set) ContainsRawIPv4(ipRaw uint32) bool {
+func (s *set) ContainsRawIPv4(ipRaw uint32) bool {
 	ipByte := make([]byte, 4)
 	binary.BigEndian.PutUint32(ipByte, ipRaw)
 	ip := net.IP(ipByte)
 	return s.Contains(ip)
 }
 
-func (s *uint128set) Contains(ip net.IP) bool {
+func (s *set) Contains(ip net.IP) bool {
 	if s.root == nil {
 		return false
 	}
@@ -87,7 +87,7 @@ func (s *uint128set) Contains(ip net.IP) bool {
 	}
 }
 
-func (s *uint128set) Add(cidr *net.IPNet) {
+func (s *set) Add(cidr *net.IPNet) {
 	node, err := nodeFromNet(cidr)
 	if err != nil {
 		panic(err)
