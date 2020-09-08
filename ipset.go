@@ -15,6 +15,7 @@ type Set interface {
 	ContainsRawIPv4(uint32) bool
 }
 
+// ipset is a set based on radix tree (r = 2, so called patricia tree)
 type ipset struct {
 	root *treeNode
 }
