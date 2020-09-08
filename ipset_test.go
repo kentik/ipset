@@ -125,6 +125,53 @@ func TestSetContains(t *testing.T) {
 	}
 }
 
+var ipv6Groups = []struct {
+	name        string
+	cidrs       []*net.IPNet
+	positiveIPs []net.IP
+	negativeIPs []net.IP
+}{
+	{
+		name:        "two disjoint blocks",
+		cidrs:       parseCidrs("0001::/32", "fff1::/32"),
+		positiveIPs: []net.IP{net.ParseIP("0001::2"), net.ParseIP("fff1::2")},
+		negativeIPs: []net.IP{net.ParseIP("254.0.0.2"), net.ParseIP("fff2::")},
+	},
+}
+
+func TestSetContainsIPv6(t *testing.T) {
+	for _, group := range ipv6Groups {
+		t.Run(group.name, func(t *testing.T) {
+			s := NewSet(group.cidrs...)
+
+			for _, ip := range group.negativeIPs {
+				t.Run(ip.String(), func(t *testing.T) {
+					if got := s.Contains(ip); got != false {
+						t.Errorf("negative case returned true: %s", ip.String())
+					}
+				})
+			}
+
+			for _, ip := range group.positiveIPs {
+				t.Run(ip.String(), func(t *testing.T) {
+					if got := s.Contains(ip); got != true {
+						t.Errorf("positive case returned true: %s", ip.String())
+					}
+				})
+			}
+
+			for _, cidr := range group.cidrs {
+				t.Run(cidr.IP.String(), func(t *testing.T) {
+					got := s.Contains(cidr.IP)
+					if got != true {
+						t.Errorf("cidr case returned false: %s", cidr.IP.String())
+					}
+				})
+			}
+		})
+	}
+}
+
 func TestNodeFromSet(t *testing.T) {
 	parseCidr := func(foo string) *net.IPNet {
 		_, net, err := net.ParseCIDR(foo)
