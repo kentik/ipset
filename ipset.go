@@ -9,19 +9,19 @@ import (
 	"github.com/kentik/uint128"
 )
 
-// CIDRSet is a fast lookup structure which tells whether ip is covered by any of cidr blocks contained
-type CIDRSet interface {
+// Set tells whether ip is covered by any of subnets contained, handles both ipv4 and ipv6
+type Set interface {
 	Contains(net.IP) bool
 	ContainsRawIPv4(uint32) bool
 }
 
-type set struct {
+type ipset struct {
 	root *treeNode
 }
 
 // NewSet constructs CIDRSet from list of cidrs
-func NewSet(cidrs ...*net.IPNet) CIDRSet {
-	s := &set{}
+func NewSet(cidrs ...*net.IPNet) Set {
+	s := &ipset{}
 
 	for _, cidr := range cidrs {
 		s.Add(cidr)
@@ -31,7 +31,7 @@ func NewSet(cidrs ...*net.IPNet) CIDRSet {
 }
 
 // NewSetFromCSV constructs set from comma separated list of cidrs
-func NewSetFromCSV(cidrsCSV string) (CIDRSet, error) {
+func NewSetFromCSV(cidrsCSV string) (Set, error) {
 	cidrs, err := util.IPCidrListFromRaw(cidrsCSV)
 	if err != nil {
 		return nil, fmt.Errorf("from NewSetFromCSV: %w", err)
@@ -49,14 +49,14 @@ func uint128FromIP(ip net.IP) (uint128.Uint128, error) {
 	return uint128.New(binary.BigEndian.Uint64(ipv6[8:]), binary.BigEndian.Uint64(ipv6[:8])), nil
 }
 
-func (s *set) ContainsRawIPv4(ipRaw uint32) bool {
+func (s *ipset) ContainsRawIPv4(ipRaw uint32) bool {
 	ipByte := make([]byte, 4)
 	binary.BigEndian.PutUint32(ipByte, ipRaw)
 	ip := net.IP(ipByte)
 	return s.Contains(ip)
 }
 
-func (s *set) Contains(ip net.IP) bool {
+func (s *ipset) Contains(ip net.IP) bool {
 	if s.root == nil {
 		return false
 	}
@@ -87,8 +87,8 @@ func (s *set) Contains(ip net.IP) bool {
 	}
 }
 
-func (s *set) Add(cidr *net.IPNet) {
-	node, err := nodeFromNet(cidr)
+func (s *ipset) Add(subnet *net.IPNet) {
+	node, err := nodeFromNet(subnet)
 	if err != nil {
 		panic(err)
 	}
