@@ -60,20 +60,6 @@ var groups = []struct {
 		negativeIPs: []net.IP{net.ParseIP("254.0.0.2"), net.ParseIP("254.0.0.129"), net.ParseIP("129.0.0.2"), net.ParseIP("129.0.0.129")},
 	},
 	{
-		name: "***REMOVED***",
-		cidrs: func() []*net.IPNet {
-			cidrsCSV := `***REMOVED***`
-			cidrsRaw := strings.Split(cidrsCSV, ",")
-			return parseCidrs(cidrsRaw...)
-		}(),
-		negativeIPs: []net.IP{
-			net.ParseIP("0.0.0.0"),
-			net.ParseIP("1.2.3.4"),
-			net.ParseIP("***REMOVED***"), // last ip before min int value from ***REMOVED***"***REMOVED***"),  // last ip after max+255+1 int value from ***REMOVED***"***REMOVED***"),
-			net.ParseIP("255.255.255.255"),
-		},
-	},
-	{
 		name:  "panic from tests1",
 		cidrs: parseCidrs("172.17.0.0/24", "172.17.0.1/24"),
 		negativeIPs: []net.IP{
