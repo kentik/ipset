@@ -4,9 +4,9 @@ import (
 	"encoding/binary"
 	"net"
 	"strings"
+	"strconv"
 	"testing"
 
-	"github.com/kentik/chf-alert/pkg/alert/util"
 	"github.com/kentik/uint128"
 )
 
@@ -91,7 +91,7 @@ func TestSetContains(t *testing.T) {
 			}
 
 			for _, cidr := range group.cidrs {
-				low, high, err := util.GetHostsRangeFromCIDR(cidr.String())
+				low, high, err := getHostsRangeFromCIDR(cidr.String())
 				if err != nil {
 					t.Fatalf("Getting cidr range failed: %v", err)
 				}
@@ -286,4 +286,54 @@ func TestMatchingPrefix(t *testing.T) {
 			}
 		})
 	}
+}
+
+func getHostsRangeFromCIDR(s string) (uint32, uint32, error) {
+	_, ipnet, err := net.ParseCIDR(s)
+	if err != nil {
+		return 0, 0, err
+	}
+	low, high := getHostsRangeFromIPNet(ipnet)
+	return low, high, nil
+}
+
+func getHostsRangeFromIPNet(ipnet *net.IPNet) (uint32, uint32) {
+	itval := inetAtoN(ipnet.IP)
+	mask := strings.Split(ipnet.String(), "/")[1]
+	return getHostsRange(mask, itval)
+}
+
+func getHostsRange(netmask string, numeric_ipv4 uint32) (uint32, uint32) {
+	nmi, err := strconv.Atoi(netmask)
+	nm := uint32(nmi)
+
+	if err != nil || nm > 32 {
+		return 0, 0
+	}
+
+	bitmask := uint32(0xFFFFFFFF)
+	subnet := uint32(32 - nm)
+
+	bitmask = bitmask >> subnet
+	bitmask = bitmask << subnet
+
+	return numeric_ipv4 & bitmask, numeric_ipv4 | ^bitmask
+}
+
+func inetAtoN(ipnr net.IP) uint32 {
+	bits := strings.Split(ipnr.String(), ".")
+
+	b0, _ := strconv.Atoi(bits[0])
+	b1, _ := strconv.Atoi(bits[1])
+	b2, _ := strconv.Atoi(bits[2])
+	b3, _ := strconv.Atoi(bits[3])
+
+	var sum uint32
+
+	sum += uint32(b0) << 24
+	sum += uint32(b1) << 16
+	sum += uint32(b2) << 8
+	sum += uint32(b3)
+
+	return sum
 }

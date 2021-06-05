@@ -4,8 +4,8 @@ import (
 	"encoding/binary"
 	"fmt"
 	"net"
+	"strings"
 
-	"github.com/kentik/chf-alert/pkg/alert/util"
 	"github.com/kentik/uint128"
 )
 
@@ -33,7 +33,7 @@ func NewSet(cidrs ...*net.IPNet) Set {
 
 // NewSetFromCSV constructs set from comma separated list of cidrs
 func NewSetFromCSV(cidrsCSV string) (Set, error) {
-	cidrs, err := util.IPCidrListFromRaw(cidrsCSV)
+	cidrs, err := iPCidrListFromRaw(cidrsCSV)
 	if err != nil {
 		return nil, fmt.Errorf("from NewSetFromCSV: %w", err)
 	}
@@ -193,4 +193,44 @@ func (n *treeNode) Equals(node *treeNode) bool {
 
 func matchingPrefix(l, r uint128.Uint128) uint32 {
 	return uint32(l.Xor(r).LeadingZeros())
+}
+
+
+// IPCidrListFromRaw normalizes list of comma separates ips and/or cidrs into net.IPnet, works on v4 and v6 ips
+// errors out on non ip string parts (doesn't support csv escaping by the way)
+func iPCidrListFromRaw(raw string) (cidrs []*net.IPNet, _ error) {
+	if len(raw) == 0 {
+		return
+	}
+
+	ipCidrs := strings.Split(raw, ",")
+	cidrs = make([]*net.IPNet, len(ipCidrs))
+	for i, ipCidr := range ipCidrs {
+		net, err := netFromIPCidr2(ipCidr)
+		if err != nil {
+			return nil, fmt.Errorf("from IPCidrListFromRaw: %w", err)
+		}
+		cidrs[i] = net
+	}
+
+	return
+}
+
+// netFromIPCidr2 returns network from ip or cidr string representation including ipv6
+func netFromIPCidr2(ipCidr string) (*net.IPNet, error) {
+	ipCidr = strings.TrimSpace(ipCidr)
+	if !strings.Contains(ipCidr, "/") {
+		if strings.Contains(ipCidr, ":") {
+			ipCidr += "/128"
+		} else {
+			ipCidr += "/32"
+		}
+	}
+
+	_, wlnet, err := net.ParseCIDR(ipCidr)
+	if err != nil {
+		err = fmt.Errorf("NetFromIPCidr: %w", err)
+	}
+
+	return wlnet, err
 }
