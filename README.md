@@ -3,6 +3,9 @@
 ipset is a Go library for dealing with sets of CIDR prefixes.  It uses a radix tree
 (r=2), also called a Patricia trie. 
 
+After creating an `ipset.Set` and populating it with prefixes, the `Contains` function
+can be used to check if a given address is contained by any of the prefixes in the set.
+
 ## Usage
 
 ```
