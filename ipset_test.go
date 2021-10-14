@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/kentik/uint128"
+	"lukechampine.com/uint128"
 )
 
 func parseCidrs(s ...string) (res []*net.IPNet) {
