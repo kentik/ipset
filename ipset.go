@@ -6,7 +6,7 @@ import (
 	"net"
 	"strings"
 
-	"github.com/kentik/uint128"
+	"lukechampine.com/uint128"
 )
 
 // Set tells whether ip is covered by any of subnets contained, handles both ipv4 and ipv6
