@@ -3,8 +3,8 @@ package ipset
 import (
 	"encoding/binary"
 	"net"
-	"strings"
 	"strconv"
+	"strings"
 	"testing"
 
 	"lukechampine.com/uint128"
@@ -23,7 +23,6 @@ func parseCidrs(s ...string) (res []*net.IPNet) {
 	return
 }
 
-// TODO(tjonak): those tests add 1.5s to chf-alert test suite, move this to separate package
 var groups = []struct {
 	name        string
 	cidrs       []*net.IPNet
