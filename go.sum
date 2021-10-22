@@ -1,4 +1,2 @@
-github.com/kentik/uint128 v1.0.1-0.20200908091953-1cca5beaddc3 h1:enQEY/dPdde6F9Bfad0eJppoT86FHB9xWNJbC0DipFI=
-github.com/kentik/uint128 v1.0.1-0.20200908091953-1cca5beaddc3/go.mod h1:oC2IVXiADzxPMsu0OOq40KTW3EevBjq/+wJoDrpaVOo=
 lukechampine.com/uint128 v1.1.1 h1:pnxCASz787iMf+02ssImqk6OLt+Z5QHMoZyUXR4z6JU=
 lukechampine.com/uint128 v1.1.1/go.mod h1:c4eWIwlEGaxC/+H1VguhU4PHXNWDCDMUlWdIWl2j1gk=
