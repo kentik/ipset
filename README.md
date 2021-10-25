@@ -1,5 +1,11 @@
 # ipset
 
+![CI](https://github.com/kentik/ipset/workflows/CI/badge.svg)
+[![GitHub Release](https://img.shields.io/github/release/kentik/ipset.svg?style=flat)](https://github.com/kentik/ipset/releases/latest)
+[![Coverage Status](https://coveralls.io/repos/github/kentik/ipset/badge.svg?branch=main)](https://coveralls.io/github/kentik/ipset?branch=main)
+[![Go Report Card](https://goreportcard.com/badge/github.com/kentik/ipset)](https://goreportcard.com/report/github.com/kentik/ipset) 
+
+
 ipset is a Go library for dealing with sets of CIDR prefixes.  It uses a radix tree
 (r=2), also called a Patricia trie. 
 
