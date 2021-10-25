@@ -195,7 +195,6 @@ func matchingPrefix(l, r uint128.Uint128) uint32 {
 	return uint32(l.Xor(r).LeadingZeros())
 }
 
-
 // IPCidrListFromRaw normalizes list of comma separates ips and/or cidrs into net.IPnet, works on v4 and v6 ips
 // errors out on non ip string parts (doesn't support csv escaping by the way)
 func iPCidrListFromRaw(raw string) (cidrs []*net.IPNet, _ error) {
