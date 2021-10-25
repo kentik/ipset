@@ -54,7 +54,7 @@ func (s *ipset) ContainsRawIPv4(ipRaw uint32) bool {
 	ipByte := make([]byte, 4)
 	binary.BigEndian.PutUint32(ipByte, ipRaw)
 	ip := net.IP(ipByte)
-	return s.Contains(ip)
+	   return s.Contains(ip)
 }
 
 func (s *ipset) Contains(ip net.IP) bool {
