@@ -206,11 +206,11 @@ func iPCidrListFromRaw(raw string) (cidrs []*net.IPNet, _ error) {
 	ipCidrs := strings.Split(raw, ",")
 	cidrs = make([]*net.IPNet, len(ipCidrs))
 	for i, ipCidr := range ipCidrs {
-		net, err := netFromIPCidr2(ipCidr)
+		network, err := netFromIPCidr2(ipCidr)
 		if err != nil {
 			return nil, fmt.Errorf("from IPCidrListFromRaw: %w", err)
 		}
-		cidrs[i] = net
+		cidrs[i] = network
 	}
 
 	return

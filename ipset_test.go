@@ -39,7 +39,7 @@ var groups = []struct {
 		negativeIPs: []net.IP{net.ParseIP("253.0.0.1")},
 	},
 	{
-		name:        "three overlaping blocks",
+		name:        "three overlapping blocks",
 		cidrs:       parseCidrs("255.0.0.0/20", "254.0.0.0/20", "128.0.0.0/20"),
 		negativeIPs: []net.IP{net.ParseIP("253.0.0.1"), net.ParseIP("84.0.0.1")},
 	},
@@ -175,11 +175,11 @@ func TestSetContainsIPv6(t *testing.T) {
 
 func TestNodeFromSet(t *testing.T) {
 	parseCidr := func(foo string) *net.IPNet {
-		_, net, err := net.ParseCIDR(foo)
+		_, subnet, err := net.ParseCIDR(foo)
 		if err != nil {
 			panic(err)
 		}
-		return net
+		return subnet
 	}
 
 	testCases := []struct {
@@ -228,7 +228,7 @@ func TestNodeFromSet(t *testing.T) {
 				t.Fatalf("Unexpected error (shouldFail: %t, err: %v)", tc.shouldFail, err)
 			}
 
-			if !node.Equals(tc.expected) {
+			if node != nil && !node.Equals(tc.expected) {
 				t.Errorf("Mismatch (expected: %s, got: %s)", tc.expected, node)
 			}
 		})
@@ -318,7 +318,7 @@ func getHostsRangeFromIPNet(ipnet *net.IPNet) (uint32, uint32) {
 	return getHostsRange(mask, itval)
 }
 
-func getHostsRange(netmask string, numeric_ipv4 uint32) (uint32, uint32) {
+func getHostsRange(netmask string, numericIpv4 uint32) (uint32, uint32) {
 	nmi, err := strconv.Atoi(netmask)
 	nm := uint32(nmi)
 
@@ -327,12 +327,12 @@ func getHostsRange(netmask string, numeric_ipv4 uint32) (uint32, uint32) {
 	}
 
 	bitmask := uint32(0xFFFFFFFF)
-	subnet := uint32(32 - nm)
+	subnet := 32 - nm
 
 	bitmask = bitmask >> subnet
 	bitmask = bitmask << subnet
 
-	return numeric_ipv4 & bitmask, numeric_ipv4 | ^bitmask
+	return numericIpv4 & bitmask, numericIpv4 | ^bitmask
 }
 
 func inetAtoN(ipnr net.IP) uint32 {
