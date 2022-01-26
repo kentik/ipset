@@ -12,6 +12,7 @@ import (
 // Set tells whether ip is covered by any of subnets contained, handles both ipv4 and ipv6
 type Set interface {
 	Contains(net.IP) bool
+	ContainsSubnet(*net.IPNet) bool
 	ContainsRawIPv4(uint32) bool
 }
 
@@ -85,6 +86,55 @@ func (s *ipset) Contains(ip net.IP) bool {
 		} else {
 			curr = curr.right
 		}
+	}
+}
+
+func (s *ipset) ContainsSubnet(subnet *net.IPNet) bool {
+	if s.root == nil {
+		return false
+	}
+
+	if subnet == nil {
+		// TODO(tjonak): this is awkward, math tells me empty subnet should be always contained
+		// intuition says user never want this case to occur anyways
+		return true
+	}
+
+	addr, err := uint128FromIP(subnet.IP)
+	if err != nil {
+		return false
+	}
+
+	maskSize, maskBits := subnet.Mask.Size()
+	if maskBits < 128 {
+		maskSize += 96
+	}
+
+	curr := s.root
+	offset := uint32(0)
+	i := 0
+	for {
+		matching := matchingPrefix(addr, curr.addr)
+		// if matching >
+		offset += curr.prefix
+		if matching < offset {
+			return false
+		}
+
+		if curr.left == nil || matching == 128 {
+			return true
+		}
+
+		if offset > uint32(maskSize) {
+			return false
+		}
+
+		if addr.Rsh(uint(128-(offset+1))).And64(0x01) == uint128.Zero {
+			curr = curr.left
+		} else {
+			curr = curr.right
+		}
+		i++
 	}
 }
 
